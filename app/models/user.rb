@@ -5,6 +5,10 @@ class User
   field :email, type: String
   field :password_hash, type: String
 
+  has_and_belongs_to_many :games
+
+  validates_presence_of :name, :email, :password_hash
+
   def password
     @password ||= Password.new(password_hash)
   end
