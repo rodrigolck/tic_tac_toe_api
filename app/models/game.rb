@@ -18,10 +18,9 @@ class Game
   end
 
   def move(move, user)
-    last_game_state = self.history.last["game_state"].clone
-    last_turn = self.history.last["turn"]
-    raise "Invalid move" if invalid_move?(move, user, last_game_state, last_turn)
+    raise "Invalid move" if invalid_move?(move, user)
     self.update_attributes!(status: "playing") if status == "waiting"
+    last_game_state = clone_last_game_state
     last_game_state[move.first][move.last] = user.id.to_s
     self.history << {"game_state" => last_game_state, "turn" => user.id.to_s}
     self.update_attributes!(history: self.history)
@@ -44,14 +43,18 @@ class Game
         id: self.id.to_s,
         status: self.status,
         users: self.users.map {|user| user.name},
-        winner: self.winner.to_s,
-        loser: self.loser.to_s
+        winner: user_hash[self.winner.to_s].try(:name),
+        loser: user_hash[self.loser.to_s].try(:name)
       }
     result[:history] = history_json if history
     result
   end
 
   private
+    def clone_last_game_state
+      self.history.last["game_state"].map{|game_line| game_line.dup}
+    end
+
     def history_json
       self.history.map do |game_hist|
         {
@@ -69,10 +72,10 @@ class Game
       end
     end
 
-    def invalid_move?(move, user, last_game_state, last_turn)
+    def invalid_move?(move, user)
       self.status == "finished" ||
-      last_turn == user.id.to_s ||
-      last_game_state[move.first][move.last] ||
+      self.history.last["turn"] == user.id.to_s ||
+      self.history.last["game_state"][move.first][move.last] ||
       !user_hash[user.id.to_s] ||
       move.class != Array ||
       move.size != 2 ||
@@ -103,8 +106,9 @@ class Game
     def user_hash
       return @user_hash if @user_hash
       @user_hash = Hash.new
-      @user_hash[self.users.first.id.to_s] = self.users.first
-      @user_hash[self.users.last.id.to_s] = self.users.last
+      users_array = self.users.to_a
+      @user_hash[users_array.first.id.to_s] = users_array.first
+      @user_hash[users_array.last.id.to_s] = users_array.last
       @user_hash
     end
 
