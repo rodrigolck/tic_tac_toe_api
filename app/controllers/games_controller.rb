@@ -9,7 +9,7 @@ class GamesController < ApplicationController
 
   # GET /games/1
   def show
-    render json: game_json(@game, true)
+    render json: @game.game_json(true)
   end
 
   # POST /games
@@ -40,7 +40,7 @@ class GamesController < ApplicationController
       @game.move(params[:move], current_user)
       render status: :no_content
     rescue StandardError => ex
-      return render json: {move: [ex.message]}, status: :unprocessable_entity
+      return render json: {move: [ex.message]}, status: :bad_request
     end
   end
 
@@ -56,20 +56,7 @@ class GamesController < ApplicationController
 
   private
     def index_games_json(games)
-      games.map {|game| game_json(game)}
-    end
-
-    def game_json(game, history = false)
-      result =
-        {
-          id: game.id.to_s,
-          status: game.status,
-          users: game.users.map {|user| user.name},
-          winner: game.winner.to_s,
-          loser: game.loser.to_s
-        }
-      result[:history] = game.history_json if history
-      result
+      games.map {|game| game.game_json}
     end
 
     # Use callbacks to share common setup or constraints between actions.

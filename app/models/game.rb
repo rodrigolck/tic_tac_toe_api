@@ -32,22 +32,35 @@ class Game
     self.update_attributes!(status: "finished") if all_filled?
     winner_id = winner_id_of_game
     if winner_id
-      loser_id = self.user_ids.last.to_s if self.user_ids.first.to_s == winner_id
-      loser_id ||= self.user_ids.first.to_s
+      loser_id = user_hash.keys.last.to_s if self.user_ids.first.to_s == winner_id
+      loser_id ||= user_hash.keys.first.to_s
       self.update_attributes!(status: "finished", winner: winner_id, loser: loser_id)
     end
   end
 
-  def history_json
-    self.history.map do |game_hist|
+  def game_json(history = false)
+    result =
       {
-        game_state: game_state_json(game_hist["game_state"]),
-        turn: user_hash[game_hist["turn"]].try(:name)
+        id: self.id.to_s,
+        status: self.status,
+        users: self.users.map {|user| user.name},
+        winner: self.winner.to_s,
+        loser: self.loser.to_s
       }
-    end
+    result[:history] = history_json if history
+    result
   end
 
   private
+    def history_json
+      self.history.map do |game_hist|
+        {
+          game_state: game_state_json(game_hist["game_state"]),
+          turn: user_hash[game_hist["turn"]].try(:name)
+        }
+      end
+    end
+    
     def game_state_json(game_state)
       game_state.map do |line|
         line.map do |slot|
