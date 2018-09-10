@@ -70,6 +70,7 @@ class Game
     end
 
     def invalid_move?(move, user, last_game_state, last_turn)
+      self.status == "finished" ||
       last_turn == user.id.to_s ||
       last_game_state[move.first][move.last] ||
       !user_hash[user.id.to_s] ||

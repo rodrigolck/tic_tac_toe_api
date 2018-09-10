@@ -17,10 +17,10 @@ class GamesController < ApplicationController
     if current_user.playing_or_waiting?
       return render json: {game: ["Current User already in Game"]}, status: :unprocessable_entity
     end
-    @game = Game.new(user: [current_user])
+    @game = Game.new(users: [current_user])
 
     if @game.save
-      render json: @game, status: :created, location: @game
+      render status: :no_content
     else
       render json: @game.errors, status: :unprocessable_entity
     end
