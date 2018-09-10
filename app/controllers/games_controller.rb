@@ -1,5 +1,5 @@
 class GamesController < ApplicationController
-  before_action :set_game, only: [:show, :update, :destroy]
+  before_action :set_game, only: [:show, :update, :destroy, :join, :move]
 
   # GET /games
   def index
@@ -14,8 +14,8 @@ class GamesController < ApplicationController
 
   # POST /games
   def create
-    if Game.where(status: {"$in": ["waiting", "playing"]}, user_ids: current_user.id).count > 0
-      return render json: {errors: ["Current User already in Game"]}, status: :unprocessable_entity
+    if current_user.playing_or_waiting?
+      return render json: {game: ["Current User already in Game"]}, status: :unprocessable_entity
     end
     @game = Game.new(user: [current_user])
 
@@ -27,11 +27,20 @@ class GamesController < ApplicationController
   end
 
   # PATCH/PUT /games/1
-  def update
-    if @game.update(game_params)
-      render json: @game
-    else
-      render json: @game.errors, status: :unprocessable_entity
+  def join
+    error_json = {game: ["Game already full"]} if @game.user_ids.size > 1
+    error_json ||= {user: ["User already in game"]} if current_user.playing_or_waiting?
+    return render json: error_json, status: :bad_request if error_json.present?
+    @game.users << current_user
+    render status: :no_content
+  end
+
+  def move
+    begin
+      @game.move(params[:move], current_user)
+      render status: :no_content
+    rescue StandardError => ex
+      return render json: {move: [ex.message]}, status: :unprocessable_entity
     end
   end
 
@@ -56,16 +65,16 @@ class GamesController < ApplicationController
           id: game.id.to_s,
           status: game.status,
           users: game.users.map {|user| user.name},
-          winner: game.winner,
-          loser: game.loser
+          winner: game.winner.to_s,
+          loser: game.loser.to_s
         }
-      result[:history] = game.history if history
+      result[:history] = game.history_json if history
       result
     end
 
     # Use callbacks to share common setup or constraints between actions.
     def set_game
-      @game = Game.find(params[:id])
+      @game = Game.find(params[:game_id] || params[:id])
     end
 
     # Only allow a trusted parameter "white list" through.

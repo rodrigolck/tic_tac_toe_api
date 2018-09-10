@@ -21,4 +21,8 @@ class User
   def self.find_by_email(email)
     User.find_by(email: email)
   end
+
+  def playing_or_waiting?
+    Game.where(status: {"$in": ["waiting", "playing"]}, user_ids: self.id).count > 0
+  end
 end
