@@ -9,7 +9,12 @@ class Game
 
   validates :status, inclusion: { in: %w(waiting playing finished),
     message: "%{value} is not a valid status"}
-  validates :users, length: { minimum: 1, maximum: 2,
-    message: "Minimum of 1 player while waiting and 2 to play" }
+  validates :user_ids, presence: true, length: { minimum: 1, maximum: 2,
+    message: "Minimum of 1 user while waiting and 2 to play" }
+
+  def destroy
+    raise "Cannot delete Game which is not waiting" if self.status != "waiting"
+    super
+  end
 
 end
