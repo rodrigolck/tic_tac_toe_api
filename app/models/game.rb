@@ -12,8 +12,9 @@ class Game
   validates :user_ids, presence: true, length: { minimum: 1, maximum: 2,
     message: "Minimum of 1 user while waiting and 2 to play" }
 
-  def destroy
+  def destroy(user)
     raise "Cannot delete Game which is not waiting" if self.status != "waiting"
+    raise "Cannot delete Game which current user does not take part" if user_hash.keys.exclude?(user.id.to_s)
     super
   end
 

@@ -4,8 +4,8 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
   setup do
     Game.delete_all
     User.delete_all
-    @user = User.create(name: "Test", email: "test@test.com", password: "123123123")
-    @user2 = User.create(name: "Test 2", email: "test2@test.com", password: "123123123")
+    User.create(name: "Test", email: "test@test.com", password: "123123123")
+    User.create(name: "Test 2", email: "test2@test.com", password: "123123123")
     post authenticate_url, params: {email: "test@test.com", password: "123123123"}, as: :json
     @authorization = JSON.parse(response.body)["auth_token"]
     post authenticate_url, params: {email: "test2@test.com", password: "123123123"}, as: :json
@@ -26,13 +26,13 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should show game" do
-    game = Game.create(users: [@user])
+    game = Game.create(users: [User.first])
     get game_url(game), headers: {Authorization: @authorization}, as: :json
     assert_response :success
   end
 
   test "should join game" do
-    game = Game.create(users: [@user])
+    game = Game.create(users: [User.find_by(email: "test@test.com")])
     put game_join_url(game), headers: {Authorization: @authorization2}, as: :json
     assert_response 204
     assert_equal game.reload.users.size, 2
@@ -47,7 +47,7 @@ class GamesControllerTest < ActionDispatch::IntegrationTest
 
   test "should destroy game" do
     assert_difference('Game.count', 0) do
-      game = Game.create(users: [@user])
+      game = Game.create(users: [User.find_by(email: "test@test.com")])
       delete game_url(game), headers: {Authorization: @authorization}, as: :json
     end
 

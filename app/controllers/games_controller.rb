@@ -47,7 +47,7 @@ class GamesController < ApplicationController
   # DELETE /games/1
   def destroy
     begin
-      @game.destroy
+      @game.destroy(current_user)
       render status: :no_content
     rescue StandardError => ex
       return render json: {game: [ex.message]}, status: :unprocessable_entity
